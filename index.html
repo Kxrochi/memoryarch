@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ENGRAM · Control Interface</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="styles.css">
+<script src="script.js"></script>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="h-title">ENGRAM <span>Control Interface</span></div>
+  <div class="h-chips">
+    <div class="chip unk" id="chipQ"><div class="chip-dot"></div>Quantis</div>
+    <div class="chip unk" id="chipP"><div class="chip-dot"></div>pyqpanda</div>
+    <div class="chip unk" id="chipO"><div class="chip-dot"></div>Ollama</div>
+  </div>
+</header>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <button class="btn btn-primary" id="btnStart" onclick="startSim()">▶ Start</button>
+  <button class="btn btn-ghost"   id="btnStop"  onclick="stopSim()" disabled>■ Stop</button>
+  <span class="t-status idle" id="tStatus">Not running</span>
+  <div class="t-spacer"></div>
+  <span class="t-meta">Cycle <strong id="tCycle">—</strong></span>
+  <span class="t-meta" style="margin-left:12px;">Fidelity <strong id="tFidelity">—</strong></span>
+  <span class="t-meta" style="margin-left:12px;">ds² <strong id="tDsq">—</strong></span>
+</div>
+
+<div class="wrap">
+
+  <!-- LIVE VALUES -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">Live values</span>
+      <span class="card-hint">Updated every 500ms from backend</span>
+    </div>
+    <div class="card-body">
+      <div class="vals-grid">
+        <div class="val-cell">
+          <div class="val-label">Entropy S</div>
+          <div class="val-num blue" id="vEntropy">—</div>
+          <div class="val-sub">current</div>
+        </div>
+        <div class="val-cell">
+          <div class="val-label">Syntropy Σ</div>
+          <div class="val-num green" id="vSyntropy">—</div>
+          <div class="val-sub">current</div>
+        </div>
+        <div class="val-cell">
+          <div class="val-label">Fidelity</div>
+          <div class="val-num" id="vFidelity">—</div>
+          <div class="val-sub">1 − |ds²|</div>
+        </div>
+        <div class="val-cell">
+          <div class="val-label">Entropy source</div>
+          <div class="val-num" id="vSource" style="font-size:.9rem;padding-top:4px;">—</div>
+          <div class="val-sub" id="vSourceSub">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- IPR -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">Inverse Participation Ratio (IPR)</span>
+      <span class="card-hint">Lower = more ordered · threshold 0.3</span>
+    </div>
+    <div class="card-body">
+      <div class="ipr-row">
+        <div class="ipr-big" id="iprNum">—</div>
+        <div class="ipr-right">
+          <div class="prog-track"><div class="prog-fill" id="iprFill" style="width:0%;background:#dee2e6;"></div></div>
+          <div class="prog-labels"><span>0.0 — Syntropy lock</span><span>0.3</span><span>0.6</span><span>1.0 — Entropy drift</span></div>
+        </div>
+      </div>
+      <div class="status-pill idle" id="statusPill">Offline</div>
+      <div class="correction-notice" id="corrNotice">⚠ Topological correction triggered — Phase_Reset_v2 dispatched to H100</div>
+    </div>
+  </div>
+
+  <!-- CONTROLLERS + MEMORY -->
+  <div class="two-col">
+    <div class="card">
+      <div class="card-head"><span class="card-title">LLM Controllers</span></div>
+      <div class="card-body">
+        <div class="controller-row">
+          <div>
+            <div class="ctrl-name">DeepSeek-V3</div>
+            <div class="ctrl-info">Recovery · triggers when IPR &gt; 0.3</div>
+          </div>
+          <div class="ctrl-badge idle" id="dsBadge">Standby</div>
+        </div>
+        <div class="controller-row">
+          <div>
+            <div class="ctrl-name">Llama 3.3</div>
+            <div class="ctrl-info">Maintenance · active when IPR &lt; 0.3</div>
+          </div>
+          <div class="ctrl-badge idle" id="llBadge">Standby</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="card-title">ENGRAM Memory Stores</span></div>
+      <div class="card-body">
+        <div class="mem-list">
+          <div class="mem-item" id="memEp">
+            <div class="mem-item-left">
+              <div class="mem-name">Episodic</div>
+              <div class="mem-desc">IPR history · state vectors</div>
+            </div>
+            <div class="mem-dot"></div>
+          </div>
+          <div class="mem-item" id="memSe">
+            <div class="mem-item-left">
+              <div class="mem-name">Semantic</div>
+              <div class="mem-desc">Zeta zeros · physics priors</div>
+            </div>
+            <div class="mem-dot"></div>
+          </div>
+          <div class="mem-item" id="memPr">
+            <div class="mem-item-left">
+              <div class="mem-name">Procedural</div>
+              <div class="mem-desc">Phase_Reset_v2 · NOT-NOT gate</div>
+            </div>
+            <div class="mem-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGS -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">Cycle log</span>
+      <span class="card-hint" id="logCount">No cycles recorded</span>
+    </div>
+    <div class="log-layout">
+      <div class="log-table-wrap">
+        <div class="log-scroll" id="logScroll">
+          <div class="log-empty" id="logEmpty">Start the simulation to record cycles.</div>
+          <table id="logTable" style="display:none;">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Time</th>
+                <th>IPR</th>
+                <th>Entropy S</th>
+                <th>Syntropy Σ</th>
+                <th>Fidelity</th>
+                <th>Source</th>
+                <th>Controller</th>
+                <th>Memory</th>
+                <th>Correction</th>
+              </tr>
+            </thead>
+            <tbody id="logBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="summary" id="summaryPanel">
+        <div class="sum-title">Session summary</div>
+        <div class="sum-row"><span class="sum-label">Cycles recorded</span><span class="sum-val" id="sumCycles">—</span></div>
+        <div class="sum-row"><span class="sum-label">Avg IPR</span><span class="sum-val" id="sumIPR">—</span></div>
+        <div class="sum-row"><span class="sum-label">Avg entropy S</span><span class="sum-val" id="sumS">—</span></div>
+        <div class="sum-row"><span class="sum-label">Avg syntropy Σ</span><span class="sum-val" id="sumSig">—</span></div>
+        <div class="sum-row"><span class="sum-label">Avg fidelity</span><span class="sum-val" id="sumFid">—</span></div>
+        <div class="sum-row"><span class="sum-label">Corrections fired</span><span class="sum-val" id="sumCorr">—</span></div>
+        <div class="sum-row"><span class="sum-label">Time in lock (IPR&lt;0.3)</span><span class="sum-val" id="sumLock">—</span></div>
+        <div class="sum-row"><span class="sum-label">Dominant controller</span><span class="sum-val" id="sumCtrl">—</span></div>
+        <div class="sum-inference" id="sumInference">Run the simulation to generate an inference.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">Query Interface</span>
+      <span class="card-hint">Live simulation state injected into each query</span>
+    </div>
+    <div class="chat-msgs" id="chatMsgs">
+      <div class="msg bot sys">
+        <div class="msg-b">Start the simulation, then ask either model about the current system state.</div>
+      </div>
+    </div>
+    <div class="typing hidden" id="typingRow"><span></span><span></span><span></span></div>
+    <div class="chat-input">
+      <select id="modelSel">
+        <option value="auto">Active controller</option>
+        <option value="deepseek-v3">DeepSeek-V3</option>
+        <option value="llama3.3">Llama 3.3</option>
+      </select>
+      <input type="text" id="chatIn" placeholder="Ask about the current simulation state..."
+        onkeydown="if(event.key==='Enter')sendChat()"/>
+      <button onclick="sendChat()">Send</button>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <span>v1.0 · PP-RAI 2026</span>
+  <span id="connStatus">Checking backend...</span>
+</footer>
+
+</body>
+</html>
